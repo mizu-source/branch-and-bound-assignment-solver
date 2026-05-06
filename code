@@ -1,0 +1,151 @@
+import math
+
+
+cout = [
+    [9, 2, 7, 8],   # Agent 0
+    [6, 4, 3, 7],   # Agent 1
+    [5, 8, 1, 8],   # Agent 2
+    [7, 6, 9, 4],   # Agent 3
+]
+
+N = len(cout)  # Nombre d'agents = nombre de tâches
+
+# VARIABLES GLOBALES pour mémoriser la meilleure solution
+
+meilleur_cout = math.inf        # Meilleur coût trouvé jusqu'ici (infini au départ)
+meilleure_affectation = []      # Meilleure affectation trouvée
+
+
+def borne_inferieure(affectation_actuelle):
+    """
+    Calcule une borne inférieure du coût total si on continue
+    avec l'affectation_actuelle.
+
+    affectation_actuelle : liste où affectation_actuelle[i] = tâche affectée à l'agent i
+                          (ou -1 si pas encore affecté)
+    """
+    # Coût des affectations déjà faites
+    cout_actuel = sum(
+        cout[i][affectation_actuelle[i]]
+        for i in range(N)
+        if affectation_actuelle[i] != -1
+    )
+
+    # Tâches déjà utilisées
+    taches_utilisees = set(
+        affectation_actuelle[i]
+        for i in range(N)
+        if affectation_actuelle[i] != -1
+    )
+
+    # Pour chaque agent non affecté, prendre le minimum possible
+    estimation = cout_actuel
+    for i in range(N):
+        if affectation_actuelle[i] == -1:
+            # Chercher le coût minimum parmi les tâches encore libres
+            couts_disponibles = [
+                cout[i][j]
+                for j in range(N)
+                if j not in taches_utilisees
+            ]
+            if couts_disponibles:
+                estimation += min(couts_disponibles)
+
+    return estimation
+
+
+#
+# FONCTION PRINCIPALE : Branch and Bound (récursif)
+def branch_and_bound(agent_courant, affectation, taches_disponibles, cout_actuel, niveau=0):
+    """
+    Explore récursivement toutes les affectations possibles
+    en utilisant la stratégie Branch and Bound.
+
+    agent_courant      : l'agent qu'on est en train d'affecter (0 à N-1)
+    affectation        : liste des tâches affectées à chaque agent (-1 = non affecté)
+    taches_disponibles : ensemble des tâches pas encore affectées
+    cout_actuel        : coût cumulé des affectations déjà faites
+    niveau             : profondeur dans l'arbre (pour l'affichage)
+    """
+    global meilleur_cout, meilleure_affectation
+
+    indent = "  " * niveau  # Indentation pour affichage arborescent
+
+    # ── CAS DE BASE : Tous les agents sont affectés
+    if agent_courant == N:
+        print(f"{indent}✅ Solution trouvée : {affectation} | Coût = {cout_actuel}")
+        if cout_actuel < meilleur_cout:
+            meilleur_cout = cout_actuel
+            meilleure_affectation = affectation.copy()
+            print(f"{indent} Nouvelle meilleure solution ! Coût = {meilleur_cout}")
+        return
+
+    # ── BRANCHEMENT : Essayer chaque tâche disponible
+    for tache in sorted(taches_disponibles):
+
+        # Calculer le coût si on affecte cette tâche à cet agent
+        nouveau_cout = cout_actuel + cout[agent_courant][tache]
+
+        # Mettre à jour l'affectation temporairement
+        affectation[agent_courant] = tache
+        taches_disponibles.remove(tache)
+
+        # ── ÉLAGAGE (Bound)
+        # Calculer la borne inférieure pour cette branche
+        borne = borne_inferieure(affectation)
+
+        print(f"{indent}Agent {agent_courant} → Tâche {tache} | "
+              f"Coût partiel = {nouveau_cout} | Borne inf. = {borne} | "
+              f"Meilleur = {meilleur_cout}")
+
+        if borne < meilleur_cout:
+            # La borne est prometteuse → on continue d'explorer cette branche
+            branch_and_bound(
+                agent_courant + 1,
+                affectation,
+                taches_disponibles,
+                nouveau_cout,
+                niveau + 1
+            )
+        else:
+            # La borne dépasse déjà le meilleur coût connu → on coupe la branche
+            print(f"{indent}  ÉLAGAGE : borne {borne} ≥ meilleur {meilleur_cout} → branche coupée")
+
+        # Annuler l'affectation (backtracking)
+        affectation[agent_courant] = -1
+        taches_disponibles.add(tache)
+
+
+
+if __name__ == "__main__":
+
+    print("=" * 60)
+    print("  BRANCH AND BOUND - Problème d'Affectation")
+    print("=" * 60)
+
+    # Afficher la matrice de coûts
+    print("\n Matrice des coûts :")
+    print("        " + "  ".join(f"Tâche{j}" for j in range(N)))
+    for i in range(N):
+        print(f"Agent {i}  " + "     ".join(str(cout[i][j]) for j in range(N)))
+
+    print("\n Exploration de l'arbre de recherche :\n")
+
+    # Initialisation
+    affectation_init = [-1] * N               # Aucun agent affecté au départ
+    taches_init = set(range(N))              # Toutes les tâches disponibles
+
+    # Lancement de l'algorithme
+    branch_and_bound(0, affectation_init, taches_init, 0)
+
+    # Affichage du résultat final
+    print("\n" + "=" * 60)
+    print("  RÉSULTAT OPTIMAL")
+    print("=" * 60)
+    print(f"\n Coût minimum trouvé : {meilleur_cout}")
+    print("\n📋 Affectation optimale :")
+    for i in range(N):
+        tache = meilleure_affectation[i]
+        print(f"   Agent {i}  →  Tâche {tache}  (coût = {cout[i][tache]})")
+    print(f"\n   Total = {meilleur_cout}")
+    print("=" * 60)
