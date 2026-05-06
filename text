@@ -1,0 +1,29 @@
+============================================================
+  BRANCH AND BOUND - Problème d'Affectation
+============================================================
+
+Matrice des coûts :
+        Tâche0  Tâche1  Tâche2  Tâche3
+Agent 0  9       2       7       8
+Agent 1  6       4       3       7
+Agent 2  5       8       1       8
+Agent 3  7       6       9       4
+
+Exploration of search tree...
+
+Agent 0 → Tâche 0 | Partial cost = 9 | Lower bound = 15 | Best = inf
+
+============================================================
+  RÉSULTAT OPTIMAL
+============================================================
+
+ Minimum cost found : 16
+
+📋 Optimal assignment :
+   Agent 0  →  Task 1  (cost = 2)
+   Agent 1  →  Task 0  (cost = 6)
+   Agent 2  →  Task 2  (cost = 1)
+   Agent 3  →  Task 3  (cost = 4)
+
+   Total = 16
+============================================================
